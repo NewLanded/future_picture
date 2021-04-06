@@ -53,6 +53,7 @@ async def get_ts_code_interval_point_data_by_freq_code(db_conn, ts_code, start_d
 
 
 async def get_ts_code_interval_holding_data(db_conn, ts_code, start_date, end_date):
+    """获取持仓"""
     interval_holding_data_ori = await PointData(db_conn).get_ts_code_interval_holding_data(ts_code, start_date, end_date)
 
     interval_holding_data = {}
@@ -64,6 +65,33 @@ async def get_ts_code_interval_holding_data(db_conn, ts_code, start_date, end_da
                     interval_holding_data[date]["long"].append({"broker": row["broker"], "amount": row["long_hld"], "chg": row["long_chg"]})
                 if row["short_hld"]:
                     interval_holding_data[date]["short"].append({"broker": row["broker"], "amount": row["short_hld"], "chg": row["short_chg"]})
+                if row["vol"]:
+                    interval_holding_data[date]["vol"].append({"broker": row["broker"], "amount": row["vol"], "chg": row["vol_chg"]})
+
+    return interval_holding_data
+
+
+async def get_ts_code_interval_pure_holding_data(db_conn, ts_code, start_date, end_date):
+    """获取净持仓"""
+    interval_holding_data_ori = await PointData(db_conn).get_ts_code_interval_holding_data(ts_code, start_date, end_date)
+
+    interval_holding_data = {}
+    for date, date_value in interval_holding_data_ori.items():
+        interval_holding_data[date] = {"long": [], "short": [], "vol": []}
+        for row in date_value:
+            if row["broker"] != "期货公司会员":
+                if row["long_hld"] and row["short_hld"]:
+                    if row["long_hld"] >= row["short_hld"]:
+                        interval_holding_data[date]["long"].append({"broker": row["broker"], "amount": row["long_hld"] - row["short_hld"], "chg": row["long_chg"] - row["short_chg"]})
+                    else:
+                        interval_holding_data[date]["short"].append({"broker": row["broker"], "amount": row["short_hld"] - row["long_hld"], "chg": row["short_chg"] - row["long_chg"]})
+                elif row["long_hld"]:
+                    interval_holding_data[date]["long"].append({"broker": row["broker"], "amount": row["long_hld"], "chg": row["long_chg"]})
+                elif row["short_hld"]:
+                    interval_holding_data[date]["short"].append({"broker": row["broker"], "amount": row["short_hld"], "chg": row["short_chg"]})
+                else:
+                    pass
+
                 if row["vol"]:
                     interval_holding_data[date]["vol"].append({"broker": row["broker"], "amount": row["vol"], "chg": row["vol_chg"]})
 

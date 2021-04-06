@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 from source.util.util_base.constant import FreqCode
 from source.util.util_base.date_util import convert_date_to_datetime, obj_contain_datetime_convert_to_str
-from source.util.util_data.point_data import PointData
-from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code, get_ts_code_interval_point_data_by_freq_code, get_ts_code_interval_holding_data
+from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code, get_ts_code_interval_point_data_by_freq_code, \
+    get_ts_code_interval_pure_holding_data
 
 point = APIRouter(prefix="/point")
 
@@ -44,11 +44,48 @@ class HoldingInfo(BaseModel):
     ts_code: str
 
 
-@point.post("/ts_code_interval_holding_data")
-async def ts_code_interval_holding_data(request: Request, holding_info: HoldingInfo):
+@point.post("/ts_code_interval_pure_holding_data")
+async def ts_code_interval_pure_holding_data(request: Request, holding_info: HoldingInfo):
+    """
+    :param request:
+    :param holding_info:
+    :return:
+        [
+          {
+            "date": "2021-04-01",
+            "long": [
+              {
+                "broker": "海通期货",
+                "amount": 18045,
+                "chg": -528,
+                "percent": 0.07219212827755063
+              },
+              ...
+            ],
+            "short": [
+              {
+                "broker": "鲁证期货",
+                "amount": 18861,
+                "chg": 1064,
+                "percent": 0.06866535605067715
+              },
+              ...
+            ],
+            "vol": [
+              {
+                "broker": "海通期货",
+                "amount": 134333,
+                "chg": -95193,
+                "percent": 0.21055263149645298
+              },
+              ...
+            ]
+          }
+        ]
+    """
     holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn
-    holding_data_ori = await get_ts_code_interval_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)
+    holding_data_ori = await get_ts_code_interval_pure_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)
 
     sum_holding_data = {}
     for date, date_value in holding_data_ori.items():
@@ -77,9 +114,53 @@ def _sum_hold_data(first_n, data, key):
     return result
 
 
-@point.post("/ts_code_interval_holding_data_first_n")
-async def ts_code_interval_holding_data_first_n(request: Request, holding_info: HoldingInfo):
-    holding_data_ori = await ts_code_interval_holding_data(request, holding_info)
+@point.post("/ts_code_interval_pure_holding_data_first_n")
+async def ts_code_interval_pure_holding_data_first_n(request: Request, holding_info: HoldingInfo):
+    """
+    获取品种前N持仓及其占比
+    :param request:
+    :param holding_info:
+    :return:
+        [
+          {
+            "first_n": 1,
+            "data": [
+              {
+                "date": "2021-04-02",
+                "long": 18236,
+                "long_percent": 0.07072987208427389,
+                "short": 19543,
+                "short_percent": 0.06977126108082442
+              }
+            ]
+          },
+          {
+            "first_n": 3,
+            "data": [
+              {
+                "date": "2021-04-02",
+                "long": 52389,
+                "long_percent": 0.20319517814339905,
+                "short": 56001,
+                "short_percent": 0.19993145329720352
+              }
+            ]
+          },
+          {
+            "first_n": 20,
+            "data": [
+              {
+                "date": "2021-04-02",
+                "long": 257826,
+                "long_percent": 1,
+                "short": 280101,
+                "short_percent": 0.9999999999999999
+              }
+            ]
+          }
+        ]
+    """
+    holding_data_ori = await ts_code_interval_pure_holding_data(request, holding_info)
 
     holding_data = [{"first_n": 1, "data": []}, {"first_n": 3, "data": []}, {"first_n": 20, "data": []}]
     for date_value in holding_data_ori:
@@ -96,12 +177,47 @@ async def ts_code_interval_holding_data_first_n(request: Request, holding_info: 
     return obj_contain_datetime_convert_to_str(holding_data)
 
 
-@point.post("/ts_code_interval_volume_data")
-async def ts_code_interval_volume_data(request: Request, holding_info: HoldingInfo):
+@point.post("/ts_code_interval_pure_volume_data")
+async def ts_code_interval_pure_volume_data(request: Request, holding_info: HoldingInfo):
+    """
+    获取品种持仓及其占比
+    :param request:
+    :param holding_info:
+    :return:
+        {
+          "long": [
+            {
+              "amount": 12711,
+              "percent": 0.04930069116380815,
+              "broker": "一德期货",
+              "date": "2021-04-02"
+            },
+            ...
+          ],
+          "short": [
+            {
+              "amount": 11528,
+              "percent": 0.04115658280405996,
+              "broker": "一德期货",
+              "date": "2021-04-02"
+            },
+            ...
+          ],
+          "vol": [
+            {
+              "amount": 44112,
+              "percent": 0.06236806944866638,
+              "broker": "东吴期货",
+              "date": "2021-04-02"
+            },
+            ...
+          ]
+        }
+    """
     holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn
 
-    holding_data_ori = await get_ts_code_interval_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)
+    holding_data_ori = await get_ts_code_interval_pure_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)
 
     sum_holding_data_ori = {}
     for date, date_value in holding_data_ori.items():
