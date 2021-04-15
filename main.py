@@ -27,6 +27,12 @@ from source.util.util_base.db import get_multi_data, create_db_pool
 # logger.setLevel(base_logger.level)
 # logger.propagate = False
 
+
+logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s",
+                    handlers=[handlers.RotatingFileHandler(os.path.join(LOG_LOCATION, "app.log"), encoding='utf-8', maxBytes=1073741824, backupCount=20)],
+                    level=logging.INFO,
+                    datefmt="%Y-%m-%d %H:%M:%S")
+
 log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
 handler = handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=20)
 handler.setLevel(logging.INFO)
@@ -35,8 +41,7 @@ handler.setFormatter(formatter)
 
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
-# logger.propagate = False
-
+logger.propagate = False
 
 app = FastAPI()
 app.add_middleware(
