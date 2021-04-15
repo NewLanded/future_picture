@@ -17,15 +17,26 @@ from source.symbol import symbol
 from source.users import users
 from source.util.util_base.db import get_multi_data, create_db_pool
 
+# log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
+# logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s",
+#                     handlers=[handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=20)],
+#                     level=logging.INFO,
+#                     datefmt="%Y-%m-%d %H:%M:%S")
+# base_logger = logging.getLogger()
+# logger.handlers = base_logger.handlers
+# logger.setLevel(base_logger.level)
+# logger.propagate = False
+
 log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
-logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s",
-                    handlers=[handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=20)],
-                    level=logging.INFO,
-                    datefmt="%Y-%m-%d %H:%M:%S")
-base_logger = logging.getLogger()
-logger.handlers = base_logger.handlers
-logger.setLevel(base_logger.level)
-logger.propagate = False
+handler = handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=20)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+# logger.propagate = False
+
 
 app = FastAPI()
 app.add_middleware(
