@@ -2,10 +2,11 @@ import logging
 import os
 from logging import handlers
 
+from fastapi.exceptions import RequestValidationError, HTTPException, StarletteHTTPException
 from fastapi import FastAPI, Request, Depends
 from fastapi.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from source.config import LOG_LOCATION, STATIC_DIR
@@ -34,7 +35,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s",
                     datefmt="%Y-%m-%d %H:%M:%S")
 
 log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
-handler = handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=20)
+handler = handlers.RotatingFileHandler(log_filename, encoding='utf-8', maxBytes=1073741824, backupCount=5)
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s %(levelname)s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)
@@ -55,14 +56,32 @@ app.add_middleware(
 app.mount("/front", StaticFiles(directory=STATIC_DIR), name="front")
 
 app.include_router(users)
-app.include_router(symbol, dependencies=[Depends(get_current_active_user)])
-app.include_router(point, dependencies=[Depends(get_current_active_user)])
-# app.include_router(point)
-app.include_router(summarize, dependencies=[Depends(get_current_active_user)])
-app.include_router(manual_data, dependencies=[Depends(get_current_active_user)])
+# app.include_router(symbol, dependencies=[Depends(get_current_active_user)])
+# app.include_router(point, dependencies=[Depends(get_current_active_user)])
+# app.include_router(summarize, dependencies=[Depends(get_current_active_user)])
+# app.include_router(manual_data, dependencies=[Depends(get_current_active_user)])
+
+app.include_router(symbol)
+app.include_router(point)
+app.include_router(summarize)
+app.include_router(manual_data)
 
 db_pool = None
 
+
+@app.exception_handler(ValueError)
+async def http_exception_handler(request, exc):
+    return JSONResponse(str(exc), status_code=500)
+
+
+@app.exception_handler(TypeError)
+async def http_exception_handler(request, exc):
+    return JSONResponse(str(exc), status_code=500)
+
+
+@app.exception_handler(IndexError)
+async def http_exception_handler(request, exc):
+    return JSONResponse(str(exc), status_code=500)
 
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):

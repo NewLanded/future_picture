@@ -1,39 +1,92 @@
 import datetime
+from typing import List, Dict
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from source.util.util_base.constant import FreqCode
 from source.util.util_base.date_util import convert_date_to_datetime, obj_contain_datetime_convert_to_str
 from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code, get_ts_code_interval_point_data_by_freq_code, \
     get_ts_code_interval_pure_holding_data
 
-point = APIRouter(prefix="/point")
+point = APIRouter(prefix="/point", tags=["点位数据"])
 
 
-class PointInfo(BaseModel):
+class MainCodeIntervalPointDataRequest(BaseModel):
     start_date: datetime.date
     end_date: datetime.date
-    ts_code: str
+    ts_code: str = Field(..., example="A.DCE")
     freq_code: FreqCode
 
 
-@point.post("/main_code_interval_point_data")
-async def main_code_interval_point_data(request: Request, point_info: PointInfo):
+class MainCodeIntervalPointDataResponse(BaseModel):
+    date: datetime.date
+    ts_code: str
+    open: float
+    high: float
+    low: float
+    close: float
+    vol: int
+
+
+@point.post("/main_code_interval_point_data", response_model=List[MainCodeIntervalPointDataResponse])
+async def main_code_interval_point_data(request: Request, point_info: MainCodeIntervalPointDataRequest):
     point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
     db_conn = request.state.db_conn
 
-    point_data = await get_main_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
+    point_data_raw = await get_main_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
+    point_data = []
+    for date, date_data in point_data_raw.items():
+        point_data.append({
+            "date": date,
+            "ts_code": date_data["ts_code"],
+            "open": date_data["open"],
+            "high": date_data["high"],
+            "low": date_data["low"],
+            "close": date_data["close"],
+            "vol": date_data["vol"]
+        })
 
     return obj_contain_datetime_convert_to_str(point_data)
 
 
-@point.post("/ts_code_interval_point_data")
-async def ts_code_interval_point_data(request: Request, point_info: PointInfo):
+class TsCodeIntervalPointDataRequest(BaseModel):
+    start_date: datetime.date
+    end_date: datetime.date
+    ts_code: str = Field(..., example="A2105.DCE")
+    freq_code: FreqCode
+
+
+class TsCodeIntervalPointDataResponse(BaseModel):
+    date: datetime.date
+    ts_code: str
+    open: float
+    high: float
+    low: float
+    close: float
+    vol: int
+
+
+@point.post("/ts_code_interval_point_data", response_model=List[TsCodeIntervalPointDataResponse])
+async def ts_code_interval_point_data(request: Request, point_info: TsCodeIntervalPointDataRequest):
+    """
+    表中存在main_code的数据, 所以ts_code可以传main_code
+    """
     point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
     db_conn = request.state.db_conn
 
-    point_data = await get_ts_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
+    point_data_raw = await get_ts_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
+    point_data = []
+    for date, date_data in point_data_raw.items():
+        point_data.append({
+            "date": date,
+            "ts_code": date_data["ts_code"],
+            "open": date_data["open"],
+            "high": date_data["high"],
+            "low": date_data["low"],
+            "close": date_data["close"],
+            "vol": date_data["vol"]
+        })
 
     return obj_contain_datetime_convert_to_str(point_data)
 
@@ -44,12 +97,21 @@ class HoldingInfo(BaseModel):
     ts_code: str
 
 
-@point.post("/ts_code_interval_pure_holding_data")
+class TsCodeIntervalPureHoldingDataResponse(BaseModel):
+    date: datetime.date
+    long: List[Dict] = Field(..., example=[{"broker": "海通期货", "amount": 18045, "chg": -528, "percent": 0.07219212827755063}])
+    short: List[Dict] = Field(..., example=[{"broker": "海通期货", "amount": 18045, "chg": -528, "percent": 0.07219212827755063}])
+    vol: List[Dict] = Field(..., example=[{"broker": "海通期货", "amount": 18045, "chg": -528, "percent": 0.07219212827755063}])
+
+
+@point.post("/ts_code_interval_pure_holding_data", response_model=List[TsCodeIntervalPureHoldingDataResponse])
 async def ts_code_interval_pure_holding_data(request: Request, holding_info: HoldingInfo):
     """
+    表中存在main_code的数据, 所以ts_code可以传main_code
     :param request:
     :param holding_info:
     :return:
+    ```
         [
           {
             "date": "2021-04-01",
@@ -82,6 +144,7 @@ async def ts_code_interval_pure_holding_data(request: Request, holding_info: Hol
             ]
           }
         ]
+    ```
     """
     holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn
@@ -114,13 +177,20 @@ def _sum_hold_data(first_n, data, key):
     return result
 
 
-@point.post("/ts_code_interval_pure_holding_data_first_n")
+class TsCodeIntervalPureHoldingDataFirstNResponse(BaseModel):
+    first_n: int
+    data: List[Dict] = Field(..., example=[{"date": "2021-04-02", "long": 18236, "long_percent": 0.07072987208427389, "short": 19543, "short_percent": 0.06977126108082442}])
+
+
+@point.post("/ts_code_interval_pure_holding_data_first_n", response_model=List[TsCodeIntervalPureHoldingDataFirstNResponse])
 async def ts_code_interval_pure_holding_data_first_n(request: Request, holding_info: HoldingInfo):
     """
+    表中存在main_code的数据, 所以ts_code可以传main_code
     获取品种前N持仓及其占比
     :param request:
     :param holding_info:
     :return:
+    ```
         [
           {
             "first_n": 1,
@@ -159,6 +229,7 @@ async def ts_code_interval_pure_holding_data_first_n(request: Request, holding_i
             ]
           }
         ]
+    ```
     """
     holding_data_ori = await ts_code_interval_pure_holding_data(request, holding_info)
 
@@ -177,13 +248,21 @@ async def ts_code_interval_pure_holding_data_first_n(request: Request, holding_i
     return obj_contain_datetime_convert_to_str(holding_data)
 
 
-@point.post("/ts_code_interval_pure_volume_data")
+class TsCodeIntervalPureVolumeDataResponse(BaseModel):
+    long: List[Dict] = Field(..., example=[{"amount": 12711, "percent": 0.04930069116380815, "broker": "一德期货", "date": "2021-04-02"}])
+    short: List[Dict] = Field(..., example=[{"amount": 12711, "percent": 0.04930069116380815, "broker": "一德期货", "date": "2021-04-02"}])
+    vol: List[Dict] = Field(..., example=[{"amount": 12711, "percent": 0.04930069116380815, "broker": "一德期货", "date": "2021-04-02"}])
+
+
+@point.post("/ts_code_interval_pure_volume_data", response_model=TsCodeIntervalPureVolumeDataResponse)
 async def ts_code_interval_pure_volume_data(request: Request, holding_info: HoldingInfo):
     """
-    获取品种持仓及其占比
+    表中存在main_code的数据, 所以ts_code可以传main_code
+    获取品种持仓及其占比, 获取的是在龙虎榜中的占比
     :param request:
     :param holding_info:
     :return:
+    ```
         {
           "long": [
             {
@@ -213,6 +292,7 @@ async def ts_code_interval_pure_volume_data(request: Request, holding_info: Hold
             ...
           ]
         }
+    ```
     """
     holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn

@@ -78,7 +78,7 @@ class BasicInfo:
 
     async def get_active_trade_day(self, data_date):
         sql = """
-        select max(date) from sec_date_info where date <= %s and is_workday_flag=1;
+        select max(date) from sec_date_info where date <= %s and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
@@ -86,15 +86,16 @@ class BasicInfo:
 
     async def get_previous_trade_day(self, data_date):
         sql = """
-        select max(date) from sec_date_info where date < %s and is_workday_flag=1;
+        select max(date) from sec_date_info where date < %s and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
+
         return date
 
     async def get_next_trade_day(self, data_date):
         sql = """
-        select min(date) from sec_date_info where date > %s and is_workday_flag=1;
+        select min(date) from sec_date_info where date > %s and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)

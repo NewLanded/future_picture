@@ -1,8 +1,8 @@
 import datetime
 from typing import List
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, Request, HTTPException
+from pydantic import BaseModel, Field
 
 from source.util.util_base.constant import FreqCode
 from source.util.util_base.date_util import convert_date_to_datetime, obj_contain_datetime_convert_to_str
@@ -10,19 +10,29 @@ from source.util.util_data.basic_info import BasicInfo
 from source.util.util_data.point_data import PointData
 from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code
 
-summarize = APIRouter(prefix="/summarize")
+summarize = APIRouter(prefix="/summarize", tags=["汇总数据"])
 
 
-class RaiseFallInfo(BaseModel):
+class RaiseFallInfoRequest(BaseModel):
     start_date: datetime.date
     end_date: datetime.date
-    ts_code_list: List[str]
+    ts_code_list: List[str] = Field(..., example=["A.DCE", "B2105.DCE"])
     freq_code: FreqCode
 
 
-@summarize.post("/main_code_interval_raise_fall_data")
-async def main_code_interval_raise_fall_data(request: Request, summarize_info: RaiseFallInfo):
-    """品种上涨下跌数量"""
+class RaiseFallInfoResponse(BaseModel):
+    date: datetime.date
+    raise_num: int
+    fall_num: int
+
+
+@summarize.post("/main_code_interval_raise_fall_data", response_model=List[RaiseFallInfoResponse])
+async def main_code_interval_raise_fall_data(request: Request, summarize_info: RaiseFallInfoRequest):
+    """
+    品种上涨下跌数量, 未取到数据的品种不处理
+    """
+    # raise HTTPException(status_code=500, detail="Item not found")
+
     summarize_info.start_date, summarize_info.end_date = convert_date_to_datetime(summarize_info.start_date), convert_date_to_datetime(summarize_info.end_date)
     db_conn = request.state.db_conn
 
@@ -65,11 +75,11 @@ async def main_code_interval_raise_fall_data(request: Request, summarize_info: R
 
 class PointPercentInfo(BaseModel):
     data_date: datetime.date
-    ts_code: str
+    ts_code: str = Field(..., example="A.DCE")
 
 
-@summarize.post("/main_code_point_percent")
-async def main_code_interval_raise_fall_data(request: Request, summarize_info: PointPercentInfo):
+@summarize.post("/main_code_point_percent", response_model=float)
+async def main_code_point_percent(request: Request, summarize_info: PointPercentInfo):
     """品种点位在历史点位(10年)位置"""
     summarize_info.data_date = convert_date_to_datetime(summarize_info.data_date)
     db_conn = request.state.db_conn
