@@ -1,8 +1,6 @@
 import datetime
 
-from fastapi import HTTPException, status
-
-from source.util.util_base.db import get_multi_data, get_single_value, get_single_row, update_data, get_single_column
+from source.util.util_base.db import get_multi_data, update_data
 
 
 class ManualData:
@@ -12,7 +10,7 @@ class ManualData:
     async def set_future_manual_note_data(self, root_classify_id, classify_id, classify_name, classify_parent_id, note, note_point_data):
         sql = """
         insert into future_manual_note_data(root_classify_id, classify_id, classify_name, classify_parent_id, note, note_point_data, update_date)
-        values (%s, %s, %s, %s, %s, %s, %s)
+        values ($1, $2, $3, $4, $5, $6, $7)
         """
         args = [root_classify_id, classify_id, classify_name, classify_parent_id, note, note_point_data, datetime.datetime.now()]
         await update_data(self.db_conn, sql, args)
@@ -20,7 +18,7 @@ class ManualData:
     async def get_future_manual_note_data(self, root_classify_id):
         sql = """
         select root_classify_id, classify_id, classify_name, classify_parent_id, note, note_point_data from future_manual_note_data
-        where root_classify_id=%s
+        where root_classify_id=$1
         """
         args = [root_classify_id]
         result = await get_multi_data(self.db_conn, sql, args)
@@ -37,7 +35,7 @@ class ManualData:
     async def set_set_future_manual_turn_note_data(self, main_ts_code, trade_date, freq_code, point_turn_flag, note):
         sql = """
         insert into future_manual_turn_note_data(main_ts_code, trade_date, freq_code, point_turn_flag, note, update_date)
-        values (%s, %s, %s, %s, %s, %s)
+        values ($1, $2, $3, $4, $5, $6)
         """
         args = [main_ts_code, trade_date, freq_code.value, point_turn_flag, note, datetime.datetime.now()]
         await update_data(self.db_conn, sql, args)
@@ -45,7 +43,7 @@ class ManualData:
     async def get_set_future_manual_turn_note_data(self, main_ts_code, start_date, end_date, freq_code):
         sql = """
         select main_ts_code, trade_date, freq_code, point_turn_flag, note from future_manual_turn_note_data
-        where main_ts_code=%s and trade_date >= %s and trade_date <= %s and freq_code=%s
+        where main_ts_code=$1 and trade_date >= $2 and trade_date <= $3 and freq_code=$4
         """
         args = [main_ts_code, start_date, end_date, freq_code.value]
         result = await get_multi_data(self.db_conn, sql, args)

@@ -12,7 +12,7 @@ class PointData:
     async def get_ts_code_interval_total_holding_data(self, ts_code, start_date, end_date):
         sql = '''
         select ts_code, trade_date, vol, amount, oi from future_daily_point_data where 
-        ts_code = %s and trade_date >= %s and trade_date <= %s
+        ts_code = $1 and trade_date >= $2 and trade_date <= $3
         order by trade_date
         '''
         args = [ts_code, start_date, end_date]
@@ -32,7 +32,7 @@ class PointData:
     async def get_ts_code_interval_holding_data(self, ts_code, start_date, end_date):
         sql = '''
         select trade_date, broker, vol, vol_chg, long_hld, long_chg, short_hld, short_chg from future_holding_data 
-        where symbol = %s and trade_date >= %s and trade_date <= %s
+        where symbol = $1 and trade_date >= $2 and trade_date <= $3
         order by trade_date
         '''
         args = [ts_code.split(".")[0], start_date, end_date]
@@ -54,8 +54,8 @@ class PointData:
 
     async def get_future_interval_point_data(self, ts_code, start_date, end_date):
         sql = '''
-        select ts_code, trade_date, `open`, high, low, close, settle, change1, change2, vol, amount from future_daily_point_data where 
-        ts_code = %s and trade_date >= %s and trade_date <= %s
+        select ts_code, trade_date, open, high, low, close, settle, change1, change2, vol, amount from future_daily_point_data where 
+        ts_code = $1 and trade_date >= $2 and trade_date <= $3
         order by trade_date
         '''
         args = [ts_code, start_date, end_date]
@@ -82,12 +82,12 @@ class PointData:
         sql = """select a.ts_code, a.trade_date, a.open, a.high, a.low, a.close, a.settle, a.change1, a.change2, a.vol, a.amount from 
         future_daily_point_data a inner join
             (select trade_date, mapping_ts_code from future_main_code_data where ts_code=(
-            select ts_code from future_main_code_data where mapping_ts_code= %s or ts_code=%s order by length(ts_code) limit 1)) b 
+            select ts_code from future_main_code_data where mapping_ts_code= $1 or ts_code=$1 order by length(ts_code) limit 1)) b 
         on a.ts_code=b.mapping_ts_code and a.trade_date=b.trade_date
-        where a.trade_date >= %s and a.trade_date <= %s
+        where a.trade_date >= $2 and a.trade_date <= $3
         order by a.trade_date"""
 
-        args = [ts_code, ts_code, start_date, end_date]
+        args = [ts_code, start_date, end_date]
         result_ori = await get_multi_data(self.db_conn, sql, args)
 
         result = {}
@@ -113,9 +113,9 @@ class PointData:
         select a.close from 
             future_daily_point_data a inner join
                 (select trade_date, mapping_ts_code from future_main_code_data where ts_code=(
-                select ts_code from future_main_code_data where mapping_ts_code=%s order by length(ts_code) limit 1)) b 
+                select ts_code from future_main_code_data where mapping_ts_code=$1 order by length(ts_code) limit 1)) b 
             on a.ts_code=b.mapping_ts_code and a.trade_date=b.trade_date
-            where a.trade_date >= %s and a.trade_date <= %s
+            where a.trade_date >= $2 and a.trade_date <= $3
             order by a.trade_date desc
             limit 1
         """
@@ -133,9 +133,9 @@ class PointData:
         select max(a.close), min(a.close) from 
                    future_daily_point_data a inner join
                        (select trade_date, mapping_ts_code from future_main_code_data where ts_code=(
-                       select ts_code from future_main_code_data where mapping_ts_code=%s order by length(ts_code) limit 1)) b 
+                       select ts_code from future_main_code_data where mapping_ts_code=$1 order by length(ts_code) limit 1)) b 
                    on a.ts_code=b.mapping_ts_code and a.trade_date=b.trade_date
-                   where a.trade_date >= %s and a.trade_date <= %s
+                   where a.trade_date >= $2 and a.trade_date <= $3
         """
         args = [ts_code, start_date, end_date]
         result = await get_single_row(self.db_conn, sql, args)

@@ -1,27 +1,23 @@
-import aiomysql
+import asyncpg
 
 from source.config import HOST, PORT, USER, PASSWORD, DB_NAME, MINSIZE, MAXSIZE
 
 
 async def create_db_pool(host=HOST, port=PORT, user=USER, password=PASSWORD, db=DB_NAME, minsize=MINSIZE, maxsize=MAXSIZE):
-    pool = await aiomysql.create_pool(host=host, port=port, user=user, password=password, db=db, minsize=minsize, maxsize=maxsize, charset='utf8')
-
+    pool = await asyncpg.create_pool(host=host, port=port, user=user, password=password, database=db, min_size=minsize, max_size=maxsize)
+    # "postgres://stock:123@10.97.88.29:5432/stock",
     return pool
 
 
 async def get_multi_data(db_conn, sql, args=None):
-    # r = await get_multi_data(cursor, "SELECT * from s_info where ts_code in %s;", [["603559.SH", "000001.SZ"]])
     try:
-        async with db_conn.cursor() as cursor:
-            if args is None:
-                await cursor.execute(sql)
-                result = await cursor.fetchall()
-            else:
-                await cursor.execute(sql, args)
-                result = await cursor.fetchall()
+        if args is None:
+            result = await db_conn.fetch(sql)
+        else:
+            result = await db_conn.fetch(sql, *args)
     except Exception as e:
         raise e
-
+    result = [list(i) for i in result]
     return result
 
 
@@ -33,16 +29,13 @@ async def get_single_column(db_conn, sql, args=None):
 
 async def get_single_row(db_conn, sql, args=None):
     try:
-        async with db_conn.cursor() as cursor:
-            if args is None:
-                await cursor.execute(sql)
-                result = await cursor.fetchone()
-            else:
-                await cursor.execute(sql, args)
-                result = await cursor.fetchone()
+        if args is None:
+            result = await db_conn.fetchrow(sql)
+        else:
+            result = await db_conn.fetchrow(sql, *args)
     except Exception as e:
         raise e
-
+    result = list(result)
     return result
 
 
@@ -53,8 +46,8 @@ async def get_single_value(db_conn, sql, args=None):
 
 
 async def get_boolean_value(db_conn, sql, args=None):
-    result = get_multi_data(db_conn, sql, args)
-    if len(result) > 0 and result[0][0] == 1:
+    result = get_single_value(db_conn, sql, args)
+    if result:
         return True
     else:
         return False
@@ -62,11 +55,10 @@ async def get_boolean_value(db_conn, sql, args=None):
 
 async def update_data(db_conn, sql, args=None):
     try:
-        async with db_conn.cursor() as cursor:
+        async with db_conn.transaction():
             if args is None:
-                await cursor.execute(sql)
+                await db_conn.execute(sql)
             else:
-                await cursor.execute(sql, args)
-            await db_conn.commit()
+                await db_conn.execute(sql, *args)
     except Exception as e:
         raise e

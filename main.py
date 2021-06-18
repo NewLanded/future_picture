@@ -2,11 +2,10 @@ import logging
 import os
 from logging import handlers
 
-from fastapi.exceptions import RequestValidationError, HTTPException, StarletteHTTPException
 from fastapi import FastAPI, Request, Depends
 from fastapi.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from source.config import LOG_LOCATION, STATIC_DIR
@@ -16,6 +15,7 @@ from source.point import point
 from source.summarize import summarize
 from source.symbol import symbol
 from source.users import users
+from source.note import note
 from source.util.util_base.db import get_multi_data, create_db_pool
 
 # log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
@@ -60,11 +60,13 @@ app.include_router(users)
 # app.include_router(point, dependencies=[Depends(get_current_active_user)])
 # app.include_router(summarize, dependencies=[Depends(get_current_active_user)])
 # app.include_router(manual_data, dependencies=[Depends(get_current_active_user)])
+# app.include_router(note, dependencies=[Depends(get_current_active_user)])
 
 app.include_router(symbol)
 app.include_router(point)
 app.include_router(summarize)
 app.include_router(manual_data)
+app.include_router(note)
 
 db_pool = None
 
@@ -83,12 +85,14 @@ async def http_exception_handler(request, exc):
 async def http_exception_handler(request, exc):
     return JSONResponse(str(exc), status_code=500)
 
+
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
     async with db_pool.acquire() as db_conn:
         # async with db_conn.cursor() as cursor:
         request.state.db_conn = db_conn
         response = await call_next(request)
+
     return response
 
 

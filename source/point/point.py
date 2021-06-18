@@ -31,7 +31,7 @@ class MainCodeIntervalPointDataResponse(BaseModel):
 
 @point.post("/main_code_interval_point_data", response_model=List[MainCodeIntervalPointDataResponse])
 async def main_code_interval_point_data(request: Request, point_info: MainCodeIntervalPointDataRequest):
-    point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
+    # point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
     db_conn = request.state.db_conn
 
     point_data_raw = await get_main_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
@@ -72,7 +72,7 @@ async def ts_code_interval_point_data(request: Request, point_info: TsCodeInterv
     """
     表中存在main_code的数据, 所以ts_code可以传main_code
     """
-    point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
+    # point_info.start_date, point_info.end_date = convert_date_to_datetime(point_info.start_date), convert_date_to_datetime(point_info.end_date)
     db_conn = request.state.db_conn
 
     point_data_raw = await get_ts_code_interval_point_data_by_freq_code(db_conn, point_info.ts_code, point_info.start_date, point_info.end_date, point_info.freq_code)
@@ -146,7 +146,7 @@ async def ts_code_interval_pure_holding_data(request: Request, holding_info: Hol
         ]
     ```
     """
-    holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
+    # holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn
     holding_data_ori = await get_ts_code_interval_pure_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)
 
@@ -294,7 +294,7 @@ async def ts_code_interval_pure_volume_data(request: Request, holding_info: Hold
         }
     ```
     """
-    holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
+    # holding_info.start_date, holding_info.end_date = convert_date_to_datetime(holding_info.start_date), convert_date_to_datetime(holding_info.end_date)
     db_conn = request.state.db_conn
 
     holding_data_ori = await get_ts_code_interval_pure_holding_data(db_conn, holding_info.ts_code, holding_info.start_date, holding_info.end_date)

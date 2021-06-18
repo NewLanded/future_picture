@@ -35,7 +35,7 @@ def obj_contain_datetime_convert_to_str(obj):
         new_obj = {}
         for key, value in obj.items():
             new_obj[obj_contain_datetime_convert_to_str(key)] = obj_contain_datetime_convert_to_str(value)
-    elif isinstance(obj, datetime.datetime):
+    elif isinstance(obj, (datetime.datetime, datetime.date)):
         new_obj = convert_datetime_to_str(obj)
     elif isinstance(obj, (str, int, float, np.float64)):
         new_obj = obj
@@ -170,3 +170,26 @@ def adjust_interval_date_list_by_exists_date(interval_date_list: List, date_list
     interval_date_list_new = [[i[0], i[-1]] for i in interval_date_list_new]
 
     return interval_date_list_new
+
+
+weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+
+def get_previous_byday(dayname, start_date):
+    day_num = start_date.weekday()
+    day_num_target = weekdays.index(dayname)
+    days_ago = (7 + day_num - day_num_target) % 7
+    # if days_ago == 0:
+    #     days_ago = 7
+    target_date = start_date - datetime.timedelta(days=days_ago)
+    return target_date
+
+
+def get_next_byday(dayname, start_date):
+    day_num = start_date.weekday()
+    day_num_target = weekdays.index(dayname)
+    days_ago = (7 + day_num_target - day_num) % 7
+    # if days_ago == 0:
+    #     days_ago = 7
+    target_date = start_date + datetime.timedelta(days=days_ago)
+    return target_date

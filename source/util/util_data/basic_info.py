@@ -10,10 +10,20 @@ class BasicInfo:
     def __init__(self, db_conn):
         self.db_conn = db_conn
 
+    async def get_ts_code_by_main_ts_code_with_date(self, main_ts_code, start_date, end_date):
+        sql = """
+        select trade_date, mapping_ts_code from future_main_code_data
+        where (ts_code in (select ts_code from future_main_code_data where mapping_ts_code=$1) or ts_code = $1) and trade_date between $2 and $3 order by trade_date
+        """
+        args = [main_ts_code, start_date, end_date]
+        result = await get_multi_data(self.db_conn, sql, args)
+
+        return result
+
     async def get_ts_code_by_main_ts_code(self, main_ts_code, data_date):
         sql = """
         select mapping_ts_code from future_main_code_data
-        where ts_code = %s and trade_date = %s;
+        where ts_code = $1 and trade_date = $2
         """
         args = [main_ts_code, data_date]
         result = await get_single_value(self.db_conn, sql, args)
@@ -22,7 +32,7 @@ class BasicInfo:
     async def get_main_ts_code_by_ts_code(self, ts_code):
         sql = """
         select ts_code from future_main_code_data
-        where mapping_ts_code = %s;
+        where mapping_ts_code = $1
         """
         args = [ts_code]
         result = await get_single_value(self.db_conn, sql, args)
@@ -35,7 +45,7 @@ class BasicInfo:
 
         sql = """
         select ts_code, exchange, name from future_basic_info_data
-        where ts_code in %s;
+        where ts_code=ANY($1::text[])
         """
         args = [ts_code_list]
         result = await get_multi_data(self.db_conn, sql, args)
@@ -45,7 +55,7 @@ class BasicInfo:
         data_date = await self.get_active_trade_day(data_date)
         sql = """
         select ts_code, mapping_ts_code from future_main_code_data
-        where trade_date = %s;
+        where trade_date = $1
         """
         args = [data_date]
         result = await get_multi_data(self.db_conn, sql, args)
@@ -67,7 +77,7 @@ class BasicInfo:
 
         sql = """
         select ts_code, name from  future_basic_info_data 
-        where symbol in %s;
+        where symbol=ANY($1::text[])
         """
         args = [symbol_code_list]
         result = await get_multi_data(self.db_conn, sql, args)
@@ -78,7 +88,7 @@ class BasicInfo:
 
     async def get_active_trade_day(self, data_date):
         sql = """
-        select max(date) from sec_date_info where date <= %s and is_workday_flag=true;
+        select max(date) from sec_date_info where date <= $1 and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
@@ -86,7 +96,7 @@ class BasicInfo:
 
     async def get_previous_trade_day(self, data_date):
         sql = """
-        select max(date) from sec_date_info where date < %s and is_workday_flag=true;
+        select max(date) from sec_date_info where date < $1 and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
@@ -95,7 +105,7 @@ class BasicInfo:
 
     async def get_next_trade_day(self, data_date):
         sql = """
-        select min(date) from sec_date_info where date > %s and is_workday_flag=true;
+        select min(date) from sec_date_info where date > $1 and is_workday_flag=true;
         """
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
