@@ -1,7 +1,8 @@
-bind = "0.0.0.0:8885"
+bind = "0.0.0.0:6677"
 workers = 1
 worker_class = "uvicorn.workers.UvicornWorker"
 timeout = 3600
+keepalive = 3600
 
 backlog = 100  # 服务器中在pending状态的最大连接数，即client处于waiting的数目。超过这个数目， client连接会得到一个error
 daemon = True
