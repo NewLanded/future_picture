@@ -2,13 +2,17 @@
 展示期货价格走势
 
 pip install:
-uvicorn
-gunicorn
-fastapi[all]
-postgres相关
+pip install fastapi[all]
+pip install uvicorn[standard]   # --ignore-installed PyYAML
+pip install gunicorn
+pip install aiohttp
+pip install aiomysql
+pip install python-jose[cryptography]
+pip install passlib[bcrypt]
+pip install psycopg2-binary
+pip install asyncpg
 
-
-nohup /home/stock/anaconda3/envs/stock/bin/python /home/stock/app/security_data_store/timed_task.py > /dev/null 2>&1 &
 
 cd /home/stock/app/future_picture
-gunicorn -c gunicorn.conf main:app
+mkdir log
+gunicorn -c gunicorn_config.py main:app
