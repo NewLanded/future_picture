@@ -10,7 +10,6 @@ from fastapi.staticfiles import StaticFiles
 
 from source.config import LOG_LOCATION, STATIC_DIR
 from source.dependencies import get_current_active_user
-from source.manual_data import manual_data
 from source.point import point
 from source.summarize import summarize
 from source.symbol import symbol
@@ -65,7 +64,6 @@ app.include_router(users)
 app.include_router(symbol)
 app.include_router(point)
 app.include_router(summarize)
-app.include_router(manual_data)
 app.include_router(note)
 
 db_pool = None

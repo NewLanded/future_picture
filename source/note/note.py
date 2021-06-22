@@ -1,11 +1,12 @@
 import datetime
+import os
 from typing import List
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from pydantic import BaseModel, Field
 
+from source.config import NOTE_DIR
 from source.util.util_base.constant import FreqCode
-from source.util.util_base.date_util import convert_date_to_datetime
 from source.util.util_data.note_data import NoteData
 
 note = APIRouter(prefix="/note", tags=["记录"])
@@ -49,7 +50,8 @@ async def bs_note_write(request: Request, request_params: BsNoteWriteRequest):
     db_conn = request.state.db_conn
     # trade_date = convert_date_to_datetime(request_params.trade_date)
 
-    await NoteData(db_conn).bs_note_insert(request_params.main_ts_code, request_params.ts_code, request_params.freq_code, request_params.trade_date, request_params.trade_type, request_params.number,
+    await NoteData(db_conn).bs_note_insert(request_params.main_ts_code, request_params.ts_code, request_params.freq_code, request_params.trade_date, request_params.trade_type,
+                                           request_params.number,
                                            request_params.point, request_params.note)
 
 
@@ -105,4 +107,21 @@ async def get_bs_note(request: Request, request_params: GetBsNoteRequest):
     # start_date, end_date = convert_date_to_datetime(request_params.start_date), convert_date_to_datetime(request_params.end_date)
 
     result = await NoteData(db_conn).get_bs_note(request_params.main_ts_code, request_params.start_date, request_params.end_date)
+    return result
+
+
+class GetFileNoteRequest(BaseModel):
+    file_name: str = Query("normal_note")
+
+
+@note.post("/get_file_note", response_model=List[str])
+async def get_bs_note(request: Request, request_params: GetFileNoteRequest):
+    """
+    交易记录查询
+    """
+    # aiofiles 异步读取
+    with open(os.path.join(NOTE_DIR, request_params.file_name)) as f:
+        result = f.read()
+
+    result = list(filter(lambda x: x.strip(), result.split("\n")))
     return result

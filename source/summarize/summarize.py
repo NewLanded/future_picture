@@ -8,7 +8,7 @@ from source.util.util_base.constant import FreqCode
 from source.util.util_base.date_util import convert_date_to_datetime, obj_contain_datetime_convert_to_str
 from source.util.util_data.basic_info import BasicInfo
 from source.util.util_data.point_data import PointData
-from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code
+from source.util.util_module.point_module import get_main_code_interval_point_data_by_freq_code, get_ts_code_interval_point_data_by_freq_code
 
 summarize = APIRouter(prefix="/summarize", tags=["汇总数据"])
 
@@ -147,3 +147,64 @@ async def main_code_relative_close_point_data(request: Request, summarize_info: 
         result[-1]["data"].sort(key=lambda x: x["date"])
 
     return obj_contain_datetime_convert_to_str(result)
+
+
+class TsCodeClosePointDataRelativeByOldestCodeRequest(BaseModel):
+    start_date: datetime.date
+    end_date: datetime.date
+    ts_code_list: List[str] = Field(..., example=["A2105.DCE", "B2105.DCE"])
+    freq_code: FreqCode
+
+
+class TsCodeClosePointDataRelativeByOldestCodeResponse(BaseModel):
+    date: List[datetime.date]
+    data: List[Dict]
+
+
+@summarize.post("/ts_code_close_point_data_relative_by_oldest_code", response_model=TsCodeClosePointDataRelativeByOldestCodeResponse)
+async def ts_code_close_point_data_relative_by_oldest_code(request: Request, summarize_info: TsCodeClosePointDataRelativeByOldestCodeRequest):
+    """
+    以最远的, 有数的的合约为基准, 获取收盘价的相对值, 基准合约没有的日期, 则放弃
+    :return:
+    ```
+    {
+        date: [2016-01-01, ...]
+        data: [
+            {
+                ts_code: A2105.DCE,
+                point: [2107, ...]
+            }
+        ]
+    }
+    ```
+    """
+    db_conn = request.state.db_conn
+
+    ts_code_point_data = {}
+    for ts_code in summarize_info.ts_code_list:
+        ts_code_point_data[ts_code] = await get_ts_code_interval_point_data_by_freq_code(db_conn, ts_code, summarize_info.start_date, summarize_info.end_date,
+                                                                                         summarize_info.freq_code)
+    benm_ts_code = min(list(ts_code_point_data))
+    benm_ts_code_date_list = sorted(list(ts_code_point_data[benm_ts_code]))
+
+    benm_ts_code_date_set = set(benm_ts_code_date_list)
+    for ts_code, ts_code_data in ts_code_point_data.items():
+        for date_now in list(ts_code_data):
+            if date_now not in benm_ts_code_date_set:
+                ts_code_data.pop(date_now)
+
+    ts_code_point_data_format = {"date": benm_ts_code_date_list, "data": []}
+    for ts_code, ts_code_data in ts_code_point_data.items():
+        previous_point = 0
+        ts_code_point_data_now = {"ts_code": ts_code, "point": []}
+        for date_now in benm_ts_code_date_list:
+            if date_now in ts_code_point_data[ts_code]:
+                ts_code_point_data_now["point"].append(ts_code_point_data[ts_code][date_now]["close"] - ts_code_point_data[benm_ts_code][date_now]["close"])
+            else:
+                ts_code_point_data_now["point"].append(previous_point)
+
+            previous_point = ts_code_point_data_now["point"][-1]
+
+        ts_code_point_data_format["data"].append(ts_code_point_data_now)
+
+    return ts_code_point_data_format

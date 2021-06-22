@@ -1,1 +1,0 @@
-from .manual_data import manual_data

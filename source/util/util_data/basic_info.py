@@ -110,3 +110,12 @@ class BasicInfo:
         args = [data_date]
         date = await get_single_value(self.db_conn, sql, args)
         return date
+
+    async def get_per_unit_by_fut_code(self, fut_code):
+        sql = """
+        SELECT per_unit from future_basic_info_data where fut_code=$1 and per_unit is not null order by list_date desc
+        """
+        args = [fut_code]
+        per_unit = await get_single_value(self.db_conn, sql, args)
+        return per_unit
+

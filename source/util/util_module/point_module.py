@@ -21,14 +21,15 @@ async def get_main_code_interval_point_data_by_freq_code(db_conn, ts_code, start
     for date_list in interval_date_list:
         high, low = _get_high_low_point([interval_point_data[i] for i in date_list])
         start_date, end_date = date_list[0], date_list[-1]
-        interval_point_data_by_freq_code[end_date] = {
-            "ts_code": interval_point_data[end_date]['ts_code'],
-            "open": interval_point_data[start_date]['open'],
-            "high": high,
-            "low": low,
-            "close": interval_point_data[end_date]['close'],
-            "vol": interval_point_data[end_date]['vol']
-        }
+        if interval_point_data[start_date]['open'] and interval_point_data[end_date]['close']:
+            interval_point_data_by_freq_code[end_date] = {
+                "ts_code": interval_point_data[end_date]['ts_code'],
+                "open": interval_point_data[start_date]['open'],
+                "high": high,
+                "low": low,
+                "close": interval_point_data[end_date]['close'],
+                "vol": interval_point_data[end_date]['vol']
+            }
     return interval_point_data_by_freq_code
 
 
@@ -41,14 +42,15 @@ async def get_ts_code_interval_point_data_by_freq_code(db_conn, ts_code, start_d
     for date_list in interval_date_list:
         high, low = _get_high_low_point([interval_point_data[i] for i in date_list])
         start_date, end_date = date_list[0], date_list[-1]
-        interval_point_data_by_freq_code[end_date] = {
-            "ts_code": interval_point_data[end_date]['ts_code'],
-            "open": interval_point_data[start_date]['open'],
-            "high": high,
-            "low": low,
-            "close": interval_point_data[end_date]['close'],
-            "vol": interval_point_data[end_date]['vol']
-        }
+        if interval_point_data[start_date]['open'] and interval_point_data[end_date]['close']:
+            interval_point_data_by_freq_code[end_date] = {
+                "ts_code": interval_point_data[end_date]['ts_code'],
+                "open": interval_point_data[start_date]['open'],
+                "high": high,
+                "low": low,
+                "close": interval_point_data[end_date]['close'],
+                "vol": interval_point_data[end_date]['vol']
+            }
     return interval_point_data_by_freq_code
 
 

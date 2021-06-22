@@ -46,7 +46,7 @@ async def main_code_interval_point_data(request: Request, point_info: MainCodeIn
             "close": date_data["close"],
             "vol": date_data["vol"]
         })
-
+    point_data.sort(key=lambda x: x['date'])
     return obj_contain_datetime_convert_to_str(point_data)
 
 
@@ -87,7 +87,7 @@ async def ts_code_interval_point_data(request: Request, point_info: TsCodeInterv
             "close": date_data["close"],
             "vol": date_data["vol"]
         })
-
+    point_data.sort(key=lambda x: x['date'])
     return obj_contain_datetime_convert_to_str(point_data)
 
 

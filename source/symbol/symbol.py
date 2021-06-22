@@ -2,7 +2,7 @@ import datetime
 from typing import List
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from source.util.util_base.date_util import convert_date_to_datetime, obj_contain_datetime_convert_to_str
 from source.util.util_data.basic_info import BasicInfo
@@ -102,3 +102,19 @@ async def get_contract_change_date_by_main_ts_code(request: Request, symbol_info
     date_list = date_list[1:]
 
     return obj_contain_datetime_convert_to_str(date_list)
+
+
+class SymbolCodeInfo4(BaseModel):
+    main_ts_code: str = Field(..., example="A.DCE")
+
+
+@symbol.post("/get_per_unit_by_fut_code", response_model=int)
+async def get_per_unit_by_fut_code(request: Request, symbol_info: SymbolCodeInfo4):
+    """
+    获取单位点位变动价格
+    """
+    db_conn = request.state.db_conn
+
+    fut_code = symbol_info.main_ts_code.split(".")[0]
+    per_unit = await BasicInfo(db_conn).get_per_unit_by_fut_code(fut_code)
+    return per_unit
