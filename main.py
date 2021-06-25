@@ -2,7 +2,7 @@ import logging
 import os
 from logging import handlers
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import Depends, FastAPI, Request
 from fastapi.logger import logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -10,12 +10,12 @@ from fastapi.staticfiles import StaticFiles
 
 from source.config import LOG_LOCATION, STATIC_DIR
 from source.dependencies import get_current_active_user
+from source.note import note
 from source.point import point
 from source.summarize import summarize
 from source.symbol import symbol
 from source.users import users
-from source.note import note
-from source.util.util_base.db import get_multi_data, create_db_pool
+from source.util.util_base.db import create_db_pool, get_multi_data
 
 # log_filename = os.path.join(LOG_LOCATION, "future_picture.log")
 # logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s",
@@ -104,7 +104,7 @@ async def startup():
 # TODO 貌似 shutdown 这个 方法就没起作用, 暂时不知原因
 @app.on_event("shutdown")
 async def shutdown():
-    db_pool.close()
+    await db_pool.close()
     await db_pool.wait_closed()
 
 
