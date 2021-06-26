@@ -16,3 +16,5 @@ pip install asyncpg
 cd /home/stock/app/future_picture
 mkdir log
 gunicorn -c gunicorn_config.py main:app
+
+/home/stock/anaconda3/envs/stock/bin/gunicorn --chdir /home/stock/app/future_picture -c /home/stock/app/future_picture/gunicorn_config.py  main:app
