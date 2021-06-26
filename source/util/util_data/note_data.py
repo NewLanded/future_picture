@@ -1,6 +1,8 @@
 import datetime
+import json
 
-from source.util.util_base.db import get_multi_data, update_data
+from source.util.util_base.db import (get_multi_data, get_single_value,
+                                      update_data)
 from source.util.util_data.basic_info import BasicInfo
 
 
@@ -65,3 +67,12 @@ class NoteData:
 
         return result
 
+    async def get_json_data(self, key_name):
+        sql = """
+        select data::json from json_data
+        where name = $1
+        """
+        args = [key_name]
+        result = await get_single_value(self.db_conn, sql, args)
+        result = json.loads(result)
+        return result

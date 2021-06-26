@@ -2,9 +2,8 @@ import datetime
 import os
 from typing import List
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
-
 from source.config import NOTE_DIR
 from source.util.util_base.constant import FreqCode
 from source.util.util_data.note_data import NoteData
@@ -115,7 +114,7 @@ class GetFileNoteRequest(BaseModel):
 
 
 @note.post("/get_file_note", response_model=List[str])
-async def get_bs_note(request: Request, request_params: GetFileNoteRequest):
+async def get_file_note(request: Request, request_params: GetFileNoteRequest):
     """
     交易记录查询
     """
@@ -124,4 +123,19 @@ async def get_bs_note(request: Request, request_params: GetFileNoteRequest):
         result = f.read()
 
     result = list(filter(lambda x: x.strip(), result.split("\n")))
+    return result
+
+
+class GetJsonDataRequest(BaseModel):
+    key_name: str
+
+
+@note.post("/get_json_data")
+async def get_json_data(request: Request, request_params: GetJsonDataRequest):
+    """
+    表中json数据查询
+    """
+    db_conn = request.state.db_conn
+
+    result = await NoteData(db_conn).get_json_data(request_params.key_name)
     return result
