@@ -1,6 +1,5 @@
 import asyncpg
-
-from source.config import HOST, PORT, USER, PASSWORD, DB_NAME, MINSIZE, MAXSIZE
+from source.config import DB_NAME, HOST, MAXSIZE, MINSIZE, PASSWORD, PORT, USER
 
 
 async def create_db_pool(host=HOST, port=PORT, user=USER, password=PASSWORD, db=DB_NAME, minsize=MINSIZE, maxsize=MAXSIZE):
@@ -46,7 +45,7 @@ async def get_single_value(db_conn, sql, args=None):
 
 
 async def get_boolean_value(db_conn, sql, args=None):
-    result = get_single_value(db_conn, sql, args)
+    result = await get_single_value(db_conn, sql, args)
     if result:
         return True
     else:

@@ -20,8 +20,13 @@ class NoteData:
 
     async def get_note(self, main_ts_code, start_date, end_date):
         sql = """
+        select main_ts_code, ts_code, freq_code, trade_date, note from
+        (select main_ts_code, ts_code, freq_code, trade_date, note from future_note_data 
+        where main_ts_code = $1 and trade_date between $2 and $3 
+        union
         select main_ts_code, ts_code, freq_code, trade_date, note from future_note_data 
-        where main_ts_code = $1 and trade_date between $2 and $3 order by trade_date, ts_code, freq_code
+        where main_ts_code = 'common' and trade_date between $2 and $3) a
+        order by trade_date, ts_code, freq_code
         """
         args = [main_ts_code, start_date, end_date]
         result_ori = await get_multi_data(self.db_conn, sql, args)

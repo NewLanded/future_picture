@@ -2,7 +2,6 @@ import re
 from itertools import count
 
 from fastapi import HTTPException, status
-
 from source.util.util_base.db import get_multi_data, get_single_value
 
 
@@ -62,7 +61,7 @@ class BasicInfo:
 
         result_new = []
         for row in result:
-            symbol_ts, symbol_main = row[0].split('.')[0], row[1].split('.')[0]
+            symbol_main, symbol_ts = row[0].split('.')[0], row[1].split('.')[0]
 
             if re.match(r'[A-Z]*', symbol_ts).group(0) == re.match(r'[A-Z]*', symbol_main).group(0):
                 result_new.append(row[1])
@@ -118,4 +117,3 @@ class BasicInfo:
         args = [fut_code]
         per_unit = await get_single_value(self.db_conn, sql, args)
         return per_unit
-
