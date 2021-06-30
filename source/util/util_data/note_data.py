@@ -81,3 +81,26 @@ class NoteData:
         result = await get_single_value(self.db_conn, sql, args)
         result = json.loads(result)
         return result
+
+    async def get_strategy_result_data(self, trade_date):
+        sql = """
+        select a.ts_code, a.main_ts_code, b.name, a.strategy_code, a.freq_code, a.bs_flag from strategy_result a left join
+        (select ts_code, name from s_info 
+         union
+         select ts_code, name from future_basic_info_data) b
+         on a.ts_code = b.ts_code
+        where a.date=$1 order by a.strategy_code, a.ts_code, a.main_ts_code, a.freq_code, a.bs_flag
+        """
+        args = [trade_date]
+        result_ori = await get_multi_data(self.db_conn, sql, args)
+        result = {}
+        for ts_code, main_ts_code, name, strategy_code, freq_code, bs_flag in result_ori:
+            result.setdefault(strategy_code, []).append({
+                "ts_code": ts_code,
+                "main_ts_code": main_ts_code,
+                "name": name,
+                "freq_code": freq_code,
+                "bs_flag": bs_flag
+            })
+
+        return result

@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import List
+from typing import List, Dict
 
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
@@ -138,4 +138,31 @@ async def get_json_data(request: Request, request_params: GetJsonDataRequest):
     db_conn = request.state.db_conn
 
     result = await NoteData(db_conn).get_json_data(request_params.key_name)
+    return result
+
+
+class GetStrategyResultDataRequest(BaseModel):
+    trade_date: datetime.date
+
+
+class GetStrategyResultDataResponse(BaseModel):
+    strategy_code: str
+    data: List[Dict[str, str]]
+
+
+@note.post("/get_strategy_result_data", response_model=List[GetStrategyResultDataResponse])
+async def get_strategy_result_data(request: Request, request_params: GetStrategyResultDataRequest):
+    """
+    策略结果表 数据查询
+    """
+    db_conn = request.state.db_conn
+
+    result_ori = await NoteData(db_conn).get_strategy_result_data(request_params.trade_date)
+    result = []
+    for strategy_code, strategy_data in result_ori.items():
+        result.append({
+            "strategy_code": strategy_code,
+            "data": strategy_data
+        })
+
     return result
