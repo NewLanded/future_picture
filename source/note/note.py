@@ -1,6 +1,7 @@
 import datetime
 import os
 from typing import List, Dict
+import json
 
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
@@ -123,7 +124,7 @@ async def get_file_note(request: Request, request_params: GetFileNoteRequest):
     if os.path.commonprefix((os.path.realpath(file_path), os.path.realpath(NOTE_DIR))) != NOTE_DIR:
         raise ValueError("文件路径不符合要求")
 
-    with open(file_path) as f:
+    with open(file_path, encoding='utf-8') as f:
         result = f.read()
 
     return result
@@ -133,6 +134,13 @@ async def get_file_note(request: Request, request_params: GetFileNoteRequest):
 async def get_file_note_split(request: Request, request_params: GetFileNoteRequest):
     result = await get_file_note(request, request_params)
     result = list(filter(lambda x: x.strip(), result.split("\n")))
+    return result
+
+
+@note.post("/get_file_note_json")
+async def get_file_note_json(request: Request, request_params: GetFileNoteRequest):
+    result = await get_file_note(request, request_params)
+    result = json.loads(result)
     return result
 
 
