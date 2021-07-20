@@ -110,18 +110,28 @@ async def get_bs_note(request: Request, request_params: GetBsNoteRequest):
 
 
 class GetFileNoteRequest(BaseModel):
-    file_name: str = Query("normal_note")
+    file_name: str
 
 
-@note.post("/get_file_note", response_model=List[str])
+@note.post("/get_file_note", response_model=str)
 async def get_file_note(request: Request, request_params: GetFileNoteRequest):
     """
-    交易记录查询
+    读取文件
     """
     # aiofiles 异步读取
-    with open(os.path.join(NOTE_DIR, request_params.file_name)) as f:
+    file_path = os.path.join(NOTE_DIR, request_params.file_name)
+    if os.path.commonprefix((os.path.realpath(file_path), os.path.realpath(NOTE_DIR))) != NOTE_DIR:
+        raise ValueError("文件路径不符合要求")
+
+    with open(file_path) as f:
         result = f.read()
 
+    return result
+
+
+@note.post("/get_file_note_split", response_model=List[str])
+async def get_file_note_split(request: Request, request_params: GetFileNoteRequest):
+    result = await get_file_note(request, request_params)
     result = list(filter(lambda x: x.strip(), result.split("\n")))
     return result
 
