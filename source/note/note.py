@@ -182,6 +182,7 @@ async def get_strategy_result_data(request: Request, request_params: GetStrategy
             "strategy_code": strategy_code,
             "data": strategy_data
         })
-    result.sort(key=lambda x: (x["strategy_code"], x["data"]["freq_code"]))
+        result[-1]["data"].sort(lambda x: x["freq_code"])
+    result.sort(key=lambda x: x["strategy_code"])
 
     return result
