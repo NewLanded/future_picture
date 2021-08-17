@@ -132,3 +132,4 @@ log/*
 .idea
 .vscode
 aside_future_info
+config.host.json
